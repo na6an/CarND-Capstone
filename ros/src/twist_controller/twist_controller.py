@@ -55,6 +55,6 @@ class Controller(object):
         steering = self.steer_lpf.filt(steering)
 
         return throttle, brake, steering
-
-def reset(self):
-    self.pid.reset()
+    
+    def reset(self):
+        self.throttle_controller.reset()
