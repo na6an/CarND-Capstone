@@ -57,8 +57,6 @@ class Controller(object):
             throttle = 0.0
             brake = max(0., -torque)
  
-            
-
         # Steering
         steering = self.yaw_controller.get_steering(
             target_velocity.linear.x,

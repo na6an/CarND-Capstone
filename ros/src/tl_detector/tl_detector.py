@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import rospy
 from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped, Pose
@@ -10,6 +11,7 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+import math
 from scipy.spatial import KDTree
 
 STATE_COUNT_THRESHOLD = 3
@@ -56,6 +58,14 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
 
+        ## Image capturing
+        self.train_img_idx = 0
+        self.sim_image_grab_max_range = 80     # Only grab image when close to traffic light
+        self.sim_image_grab_min_range = 2      # But not too close
+        self.sim_image_grab_min_spacing = 1    # Distance gap between images
+        self.image_grab_last_light = None      # Identify which light we were approaching last time
+        self.image_grab_last_distance = 0      # Distance from light last time
+
         rospy.spin()
 
     def pose_cb(self, msg):
@@ -101,23 +111,21 @@ class TLDetector(object):
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
-    def get_closest_waypoint(self, pose):
+    def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
             https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
         Args:
             pose (Pose): position to match a waypoint to
+            # Note: changed to x,y coords as suggested by walkthrough video.
 
         Returns:
             int: index of the closest waypoint in self.waypoints
 
         """
-        if isinstance(pose, list):
-            x, y = pose
+        if self.waypoint_tree:
+            return self.waypoint_tree.query([x, y], 1)[1]
         else:
-            x, y = pose.position.x, pose.position.y
-
-        closest_idx = self.waypoint_tree.query([x, y], 1)[1]
-        return closest_idx
+            return 0
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
@@ -129,17 +137,82 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
+        light_state_sim = light.state
+
+        if (not self.has_image):
+            self.prev_light_loc = None
+        else:
+            cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+
+            save_image = self.good_position_to_save_sim_image(light)            
+            if save_image:
+                # Grab images for DL model training
+                file_name = "/capstone/data/train/sim_{}_{}.jpg".format(
+                    self.to_string(light_state_sim), self.train_img_idx)
+                
+                cv2.imwrite(file_name, cv_image)
+                sys.stderr.write("Debug tl_detector: saved training image " + file_name + "\n")
+
+                self.train_img_idx += 1 
+            
+            #Get classification
+            #return self.light_classifier.get_classification(cv_image)
+
         # For testing, just return the light state
-        return light.state
+        return light_state_sim
 
-        # if(not self.has_image):
-        #     self.prev_light_loc = None
-        #     return False
+    def good_position_to_save_sim_image(self, closest_light):
+        """Considers whether we are within the range limits before a traffic light
+           to save a training image, and also whether we have moved far enough since
+           the last one to save a new image, so that we only end up saving a reasonable
+           number of training images from the simulation and only ones that have
+           traffic lights in.
+           
+        Returns:
+           bool: True if now is a good time to save a training image"""
+          
+       
+        # Figure out 2D Euclidean distance between us and this closest light
+        delta_x = self.pose.pose.position.x - closest_light.pose.pose.position.x
+        delta_y = self.pose.pose.position.y - closest_light.pose.pose.position.y
+        dist_sqd = delta_x * delta_x + delta_y * delta_y
+        distance = math.sqrt(dist_sqd)
+        
 
-        # cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        if (self.sim_image_grab_min_range <= distance <= self.sim_image_grab_max_range):
+            # We're within a suitable range of the light we're approaching
+            if (self.image_grab_last_light is None or
+                self.image_grab_last_light.state != closest_light.state):
+                # Definitely grab image if first light we've found, or it has changed colour
+                do_grab_image = True
+            elif closest_light.pose.pose.position.x != self.image_grab_last_light.pose.pose.position.x:
+                # First time we've been in range for this particular light so
+                # we definitely want to grab it (bit lazy to use exact equality of
+                # coordinate but works OK; header.seq always zero so no use)
+                #sys.stderr.write("dist=%f first time this light True\n" % distance)
+                do_grab_image = True
+            elif distance <= self.image_grab_last_distance - self.sim_image_grab_min_spacing:
+                # We have approached the light more closely than the last time we
+                # grabbed an image by enough distance for it to be worth capturing a new image
+                #sys.stderr.write("dist=%f got closer so True\n" % distance)
+                do_grab_image = True
+            else:
+                # We have not moved enough since last time, so skip this time as the
+                # image will be more or less the same as the last time
+                #sys.stderr.write("dist=%f not much closer so False\n" % distance)
+                do_grab_image = False
+        else:
+            # We're not in the right distance bracket but make sure we get first
+            # image when we do get within range
+            self.image_grab_last_light_x = 0
+            #sys.stderr.write("Debug: dist=%f outside limits so False\n" % distance)
+            do_grab_image = False
 
-        # #Get classification
-        # return self.light_classifier.get_classification(cv_image)
+        if do_grab_image:
+            self.image_grab_last_light = closest_light
+            self.image_grab_last_distance = distance
+            
+        return do_grab_image
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -157,14 +230,14 @@ class TLDetector(object):
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
         if(self.pose):
-            car_position = self.get_closest_waypoint(self.pose.pose)
+            car_position = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
         # find the closest visible traffic light (if one exists)
         diff = len(self.waypoints.waypoints)
         for i, light in enumerate(self.lights):
             # Get stop line waypoint index
             line = stop_line_positions[i]
-            temp_wp_idx = self.get_closest_waypoint(line)
+            temp_wp_idx = self.get_closest_waypoint(line[0], line[1])
 
             # find closest stop line waypoint index
             d = temp_wp_idx - car_position
