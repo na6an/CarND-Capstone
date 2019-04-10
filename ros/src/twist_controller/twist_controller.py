@@ -13,16 +13,15 @@ class Controller(object):
         max_steer_angle):
 
         self.yaw_controller = YawController(
-            wheel_base, steer_ratio, 0.5, max_lat_accel, max_steer_angle)
+            wheel_base, steer_ratio, ONE_MPH, max_lat_accel, max_steer_angle)
 
         kp = 0.5
         ki = 0.0001
         kd = 0.0001
         self.throttle_controller = PID(kp, ki, kd, decel_limit, accel_limit)                
 
-        tau = 0.3 # 1/(2pi * tau) = cutoff frequency
-        ts = 0.02 # sample time        
-        self.steer_lpf = LowPassFilter(tau, ts)
+        self.acc_filter = LowPassFilter(3., 1.)
+        self.steer_filter = LowPassFilter(1., 1.)
         
         self.decel_limit = decel_limit
         self.accel_limit = accel_limit
@@ -38,21 +37,34 @@ class Controller(object):
             target_velocity.linear.x,
             current_velocity.linear.x,
             rospy.get_time())
-      
-        if acceleration > 0.0:
-            # Positive
-            throttle = max(0.0, min(self.accel_limit, acceleration))
+        
+        acceleration = self.acc_filter.filt(acceleration)
+
+        torque = (acceleration * self.total_mass) * self.wheel_radius
+        max_torque = 1000.
+
+        # there is a constant bias of throttle we need to correct for
+        torque -= 0.02 * max_torque
+
+        # for idle state, we apply a small constant brake :
+        if target_velocity.linear.x < 0.05:
+            throttle = 0.0
+            brake = 100.            
+        elif acceleration > 0.0:
+            throttle = min(.25, max(torque, 0.) / max_torque)
             brake = 0.
-        else:
-            throttle = 0.
-            brake = -1.0*max(self.decel_limit, acceleration)*self.total_mass
+        else: 
+            throttle = 0.0
+            brake = max(0., -torque)
+ 
+            
 
         # Steering
         steering = self.yaw_controller.get_steering(
             target_velocity.linear.x,
             target_velocity.angular.z,
             current_velocity.linear.x)
-        steering = self.steer_lpf.filt(steering)
+        steering = self.steer_filter.filt(steering)
 
         return throttle, brake, steering
     

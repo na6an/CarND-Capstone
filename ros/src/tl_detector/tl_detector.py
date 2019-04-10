@@ -177,9 +177,6 @@ class TLDetector(object):
             self.process_count += 1
             state = self.get_light_state(closest_light)
 
-            if (self.process_count % LOGGING_THROTTLE_FACTOR) == 0:
-                print("DETECT: line_wp_idx={}, state={}".format(line_wp_idx, self.to_string(state))) 
-
         return line_wp_idx, state
 
 
