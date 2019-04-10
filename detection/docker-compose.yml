@@ -1,9 +1,7 @@
 version: '2.3'
 services:
   app:
-    build: .
-    volumes:
-      - .:/usr/src/app
+    build: .    
     runtime: nvidia
     ports:
       - 8888:8888

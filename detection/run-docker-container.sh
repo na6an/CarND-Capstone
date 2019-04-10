@@ -1,0 +1,1 @@
+nvidia-docker run --name tensorflow -p 8888:8888 -v ~/CarND-Capstone/detection/training:/training -v ~/CarND-Capstone/data:/data -v output -d detection_app
