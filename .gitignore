@@ -1,5 +1,8 @@
 *.py[cod]
 
+detection/training/model*
+detection/training/events*
+
 build
 devel
 
