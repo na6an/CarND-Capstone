@@ -1,5 +1,8 @@
 """
 Usage:
+
+# Data downloaded from: https://drive.google.com/file/d/0B-Eiyn-CUQtxdUZWMkFfQzdObUE/view
+
 # Create train/test data:
 
 python preprocess.py -i [PATH_TO_ANNOTATIONS_FILE] \
