@@ -4,6 +4,6 @@ python generate_tfrecord.py --csv_input=/data/train_labels.csv --output_path=tra
 
 python generate_tfrecord.py --csv_input=/data/test_labels.csv --output_path=training/annotations/test.record --img_path=/data/sim_training_data/
 
-python ../models/object_detection/train.py --logtostderr --train_dir=training/ --pipeline_config_path=training/ssd_inception_v2_coco.config
+python ~/tensorflow/models/object_detection/train.py --logtostderr --train_dir=. --pipeline_config_path=ssd_inception_v2_coco.config
 
-python ../../models/object_detection/train.py --logtostderr --train_dir= --pipeline_config_path=ssd_inception_v2_coco.config
+python ~/tensorflow/models/object_detection/export_inference_graph.py --input_type image_tensor --pipeline_config_path training/ssd_inception_v2_coco.config --trained_checkpoint_prefix training/model.ckpt-129784 --output_directory inference
