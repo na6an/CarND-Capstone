@@ -155,11 +155,11 @@ class TLDetector(object):
 
                 self.train_img_idx += 1 
             
-            #Get classification
-            #return self.light_classifier.get_classification(cv_image)
+        # Get classification
+        return self.light_classifier.get_classification(cv_image)
 
-        # For testing, just return the light state
-        return light_state_sim
+        # # For testing, just return the light state
+        # return light_state_sim
 
     def good_position_to_save_sim_image(self, closest_light):
         """Considers whether we are within the range limits before a traffic light
