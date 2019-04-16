@@ -70,15 +70,15 @@ class TLClassifier(object):
             # Expand dimension since the model expects image to have shape [1, None, None, 3].
             img_expanded = np.expand_dims(img, axis=0)  
             # run classifier
-            (_, scores, classes, _) = self.sess.run(
-                [self.d_boxes, self.d_scores, self.d_classes, self.num_d],
+            (scores, classes) = self.sess.run(
+                [self.d_scores, self.d_classes],
                 feed_dict={self.image_tensor: img_expanded})
             
             # find the top score for a given image frame
             top_score = np.amax(np.squeeze(scores))
             
             elapsed_time = time.time() - tic
-            sys.stderr.write("Debug: Time spent on classification=%.2f\n" % (elapsed_time))
+            sys.stderr.write("Debug: Time spent on classification=%.2f sec\n" % (elapsed_time))
 
             # figure out traffic light class based on the top score
             if top_score > DETECTION_THRESHOLD:

@@ -144,7 +144,8 @@ class TLDetector(object):
         else:
             cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-            save_image = self.good_position_to_save_sim_image(light)            
+            save_image = False
+            #save_image = self.good_position_to_save_sim_image(light)
             if save_image:
                 # Grab images for DL model training
                 file_name = "/capstone/data/train/sim_{}_{}.jpg".format(
