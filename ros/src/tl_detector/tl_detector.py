@@ -12,6 +12,7 @@ import tf
 import cv2
 import yaml
 import math
+import time
 from scipy.spatial import KDTree
 
 STATE_COUNT_THRESHOLD = 3
@@ -53,6 +54,7 @@ class TLDetector(object):
         self.light_classifier = TLClassifier()
         self.listener = tf.TransformListener()
 
+        self.last_classify_time = time.time()
         self.state = TrafficLight.UNKNOWN
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
@@ -91,7 +93,12 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
+
+        if time.time() - self.last_classify_time < 0.2:
+            return
+
         light_wp, state = self.process_traffic_lights()
+        self.last_classify_time = time.time()
 
         '''
         Publish upcoming red lights at camera frequency.
@@ -159,8 +166,8 @@ class TLDetector(object):
         # Get classification
         return self.light_classifier.get_classification(cv_image)
 
-        # # For testing, just return the light state
-        # return light_state_sim
+        # For testing, just return the light state
+        #return light_state_sim
 
     def good_position_to_save_sim_image(self, closest_light):
         """Considers whether we are within the range limits before a traffic light

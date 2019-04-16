@@ -65,8 +65,8 @@ class TLClassifier(object):
             image = image[:, :, ::-1]
 
             img = Image.fromarray(image.astype('uint8'), 'RGB')
-            size = 640, 480
-            img.thumbnail(size, Image.ANTIALIAS)
+            # size = 640, 480
+            # img.thumbnail(size, Image.ANTIALIAS)
             # Expand dimension since the model expects image to have shape [1, None, None, 3].
             img_expanded = np.expand_dims(img, axis=0)  
             # run classifier
