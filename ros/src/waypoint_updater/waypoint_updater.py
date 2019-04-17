@@ -3,7 +3,7 @@
 import rospy
 
 from std_msgs.msg import Int32
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 
 from scipy.spatial import KDTree
@@ -26,7 +26,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 60 # Number of waypoints we will publish. You can change this number
 MAX_DECEL = 0.5
 
 
@@ -49,7 +49,7 @@ class WaypointUpdater(object):
         self.loop()
     
     def loop(self):
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(20)
         while not rospy.is_shutdown():
             if self.pose and self.base_lane:
                 # Get closest waypoint
@@ -84,12 +84,13 @@ class WaypointUpdater(object):
 
     def generate_lane(self):
         lane = Lane()
+        lane.header = self.base_lane.header
+        lane.header.frame_id = self.pose.header.frame_id
+        lane.header.stamp = rospy.Time(0)
 
         closest_idx = self.get_closest_waypoint_idx()
         farthest_idx = closest_idx + LOOKAHEAD_WPS
         base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]
-
-        #lane.header = self.base_lane.header
 
         if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
             lane.waypoints = base_waypoints
@@ -118,7 +119,7 @@ class WaypointUpdater(object):
         return temp
 
     def pose_cb(self, msg):
-       	self.pose = msg 
+        self.pose = msg
 
     def waypoints_cb(self, waypoints):
         self.base_lane = waypoints
