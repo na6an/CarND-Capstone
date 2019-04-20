@@ -17,7 +17,7 @@ class Controller(object):
 
         kp = 0.5
         ki = 0.0001
-        kd = 0.0001
+        kd = 0.3
         self.throttle_controller = PID(kp, ki, kd, decel_limit, accel_limit)                
 
         self.acc_filter = LowPassFilter(3., 1.)
@@ -33,6 +33,13 @@ class Controller(object):
     def control(self, target_velocity, current_velocity):
         # TODO: Change the arg, kwarg list to suit your needs
         # Return throttle, brake, steer
+        
+        ang_vel_threshold = 0.4
+        ang_vel_ratio_min = 0.3
+        if abs(target_velocity.angular.z) > ang_vel_threshold:
+            target_velocity.linear.x = max(ang_vel_ratio_min * target_velocity.linear.x, 
+                min(1.0, ang_vel_threshold / abs(target_velocity.angular.z)) * target_velocity.linear.x)
+        
         acceleration = self.throttle_controller.step(
             target_velocity.linear.x,
             current_velocity.linear.x,
@@ -57,7 +64,7 @@ class Controller(object):
             throttle = 0.0
             brake = max(0., -torque)
  
-        # Steering
+          # Steering
         steering = self.yaw_controller.get_steering(
             target_velocity.linear.x,
             target_velocity.angular.z,
