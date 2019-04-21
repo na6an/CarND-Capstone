@@ -40,7 +40,9 @@
     ```
 * Generate TF Record
     ```
-    python generate_tfrecord.py --csv_input=$HOME/data/train_labels.csv --output_path=training/annotations/train.record --img_path=$HOME/data/sim_training_data/
+    python generate_tfrecord.py --csv_input=$HOME/data/train_labels.csv --output_path=training/annotations/sim_train.record --img_path=$HOME/data/sim_training_data/
+
+    python generate_tfrecord.py --csv_input=$HOME/data/test_labels.csv --output_path=training/annotations/sim_test.record --img_path=$HOME/data/sim_training_data/
     ```
 
 # Download model from model zoo
