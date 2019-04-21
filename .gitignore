@@ -2,6 +2,7 @@
 
 detection/training/model*
 detection/training/events*
+*.record
 
 build
 devel
