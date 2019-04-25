@@ -8,6 +8,8 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
+import rospy
+
 DETECTION_THRESHOLD = 0.5
 
 class TLClassifier(object):
@@ -22,7 +24,7 @@ class TLClassifier(object):
 
         # specify the model name based on the is_site flag state
         if self.is_site:    
-            file_name = 'ssd_real.pb'
+            file_name = 'frnn_real.pb'
         else:
             file_name = 'ssd_sim.pb'
 
@@ -64,9 +66,9 @@ class TLClassifier(object):
             # BGR to RGB conversion
             image = image[:, :, ::-1]
 
-            img = Image.fromarray(image.astype('uint8'), 'RGB')
-            # size = 640, 480
-            # img.thumbnail(size, Image.ANTIALIAS)
+            img = Image.fromarray(image.astype('uint8'), 'RGB')            
+            img.thumbnail((400, 300), Image.ANTIALIAS)
+            
             # Expand dimension since the model expects image to have shape [1, None, None, 3].
             img_expanded = np.expand_dims(img, axis=0)  
             # run classifier
@@ -78,20 +80,20 @@ class TLClassifier(object):
             top_score = np.amax(np.squeeze(scores))
             
             elapsed_time = time.time() - tic
-            sys.stderr.write("Debug: Time spent on classification=%.2f sec\n" % (elapsed_time))
+            rospy.logdebug("Time spent on classification=%.2f sec" % (elapsed_time))
 
             # figure out traffic light class based on the top score
             if top_score > DETECTION_THRESHOLD:
                 tl_state = int(np.squeeze(classes)[0])
-                if tl_state == 1:
-                    sys.stderr.write("Debug: Traffic state: RED, score=%.2f\n" % (top_score*100))
+                
+                if tl_state == 1:                    
                     return TrafficLight.RED
                 elif tl_state == 2:
-                    sys.stderr.write("Debug: Traffic state: YELLOW, score=%.2f\n" % (top_score*100))
+                    rospy.logdebug("Traffic state: YELLOW, score=%.2f" % (top_score*100))
                     return TrafficLight.YELLOW
                 else:
-                    sys.stderr.write("Debug: Traffic state: GREEN, score=%.2f\n" % (top_score*100))
+                    rospy.logdebug("Traffic state: GREEN, score=%.2f" % (top_score*100))
                     return TrafficLight.GREEN
             else:
-                sys.stderr.write("Debug: Traffic state: OFF\n")     
+                rospy.logdebug("Traffic state: OFF")
                 return TrafficLight.UNKNOWN
