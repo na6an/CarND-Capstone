@@ -23,7 +23,8 @@ class TLClassifier(object):
             os.makedirs(model_dir)
 
         # specify the model name based on the is_site flag state
-        if self.is_site:    
+        if self.is_site:
+            # Download from https://drive.google.com/file/d/1TJL51d9HMIO2WmYTHnc1GIYlS6DX-M4x/view?usp=sharing
             file_name = 'frnn_real.pb'
         else:
             file_name = 'ssd_sim.pb'
@@ -88,11 +89,9 @@ class TLClassifier(object):
                 
                 if tl_state == 1:                    
                     return TrafficLight.RED
-                elif tl_state == 2:
-                    rospy.logdebug("Traffic state: YELLOW, score=%.2f" % (top_score*100))
+                elif tl_state == 2:                    
                     return TrafficLight.YELLOW
                 else:
-                    rospy.logdebug("Traffic state: GREEN, score=%.2f" % (top_score*100))
                     return TrafficLight.GREEN
             else:
                 rospy.logdebug("Traffic state: OFF")

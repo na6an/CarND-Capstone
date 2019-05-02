@@ -4,7 +4,7 @@ import rospy
 
 from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped, TwistStamped
-from styx_msgs.msg import Lane, Waypoint
+from styx_msgs.msg import Lane, Waypoint, Light, TrafficLight
 
 from scipy.spatial import KDTree
 
@@ -26,7 +26,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 80 # Number of waypoints we will publish. You can change this number
 MAX_DECEL = 0.5
 
 
@@ -40,9 +40,13 @@ class WaypointUpdater(object):
         self.waypoint_tree = None
         self.stopline_wp_idx = -1
 
+        # Max velocity the car is allowed to drive.
+        # ros param in kilometer per hour converted to mile per second
+        self.max_velocity = self.kmph2mps(rospy.get_param('/waypoint_loader/velocity'))
+
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
+        rospy.Subscriber('/traffic_light', Light, self.traffic_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -96,38 +100,59 @@ class WaypointUpdater(object):
             base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]            
         else:
             offset = farthest_idx - track_waypoint_count
-            farthest_idx = track_waypoint_count - 2
-            base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]
-
+            
+            base_waypoints = self.base_lane.waypoints[closest_idx:track_waypoint_count]
             base_waypoints = base_waypoints + self.base_lane.waypoints[0:offset]
 
-        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
-            lane.waypoints = base_waypoints
+        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):            
+	        # If no traffic light close by within the lookahead limit
+            # just check the max speed and let the car move on
+            lane.waypoints = self.set_waypoints_velocities(base_waypoints, -1)
         else:
-            lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx)
+            lane.waypoints = self.set_waypoints_velocities(base_waypoints, closest_idx)
         
         return lane
 
-    def decelerate_waypoints(self, waypoints, closest_idx):
+
+    def set_waypoints_velocities(self, waypoints, closest_idx):
+        '''
+        if closest_idx == -1, set the velocity to max allowed velocity
+        for the given waypoints, else set the velocity to some lower
+        number or zere while not exceeding the jerk limit.
+        '''
+
         temp = []
-                
         for i, wp in enumerate(waypoints):
+
             p = Waypoint()
             p.pose = wp.pose
-    
-            stop_idx = max(self.stopline_wp_idx - closest_idx - 3, 0)
-            dist = self.distance(waypoints, i, stop_idx)
-            vel = math.sqrt(2 * MAX_DECEL * dist)
-            
-            if vel < 1.0:
+
+            if closest_idx == -1:               
+                p.twist.twist.linear.x = min(wp.twist.twist.linear.x, self.max_velocity)
+            else:
+                # 3 waypoints back from stop line so front of car stops at stop line
+                stop_idx = max(self.stopline_wp_idx - closest_idx - 3, 0)
                 vel = 0.0
 
-            # if the calculated velocity goes above what the car is driving at,
-            # no need to update the velocity
-            p.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
+                dist = self.distance(waypoints, i, stop_idx)
+
+                if self.stopline_wp_state == TrafficLight.YELLOW:
+                    # For yellow light, slow down a little bit 
+                    vel = math.sqrt(MAX_DECEL * dist)                   
+
+                if self.stopline_wp_state == TrafficLight.RED:
+                    if i > stop_idx:
+                        # Stop Immediately as the car passed the stop line                        
+                        vel = 0.0
+                    else:
+                        #slow gradually while not exceeding the jerk
+                        vel = math.sqrt(2* MAX_DECEL * dist)
+                        
+                        if vel < 1.0:
+                            vel = 0.0
+                p.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
 
             temp.append(p)
-
         return temp
 
     def pose_cb(self, msg):
@@ -139,7 +164,11 @@ class WaypointUpdater(object):
         self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg):        
-        self.stopline_wp_idx = msg.data
+        # Populate the next traffic light's stop line index
+        self.stopline_wp_idx = msg.index
+        
+        # Save the next traffic light's color
+        self.stopline_wp_state = msg.state
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
@@ -159,6 +188,8 @@ class WaypointUpdater(object):
             wp1 = i
         return dist
 
+    def kmph2mps(self, velocity_kmph):
+        return (velocity_kmph * 1000.) / (60. * 60.)
 
 if __name__ == '__main__':
     try:
