@@ -13,30 +13,13 @@ import rospy
 DETECTION_THRESHOLD = 0.5
 
 class TLClassifier(object):
-    def __init__(self):
-        #TODO load classifier
-        self.is_site = False
-
-        # specify path to /models directory with respect to the absolute path of tl_classifier.py
-        model_dir=os.path.join(os.path.dirname(__file__), 'models')
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
-
-        # specify the model name based on the is_site flag state
-        if self.is_site:
-            # Download from https://drive.google.com/file/d/1TJL51d9HMIO2WmYTHnc1GIYlS6DX-M4x/view?usp=sharing
-            file_name = 'frnn_real.pb'
-        else:
-            file_name = 'ssd_sim.pb'
-
-        # full path to the model file
-        frozen_graph_file = os.path.join(model_dir, file_name)
-
+    def __init__(self, model_path):
         # Import tensorflow graph
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
-            with tf.gfile.GFile(frozen_graph_file, 'rb') as fid:
+
+            with tf.gfile.GFile(model_path, 'rb') as fid:
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')

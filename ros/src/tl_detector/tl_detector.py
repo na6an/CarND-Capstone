@@ -58,15 +58,14 @@ class TLDetector(object):
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_light', Light, queue_size=1)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
-        self.listener = tf.TransformListener()
 
+        model_path = rospy.get_param('~model_path')
+        self.light_classifier = TLClassifier(model_path)
+        
         self.state = TrafficLight.UNKNOWN
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
-        self.state_count = 0
-        
-        self.listener = tf.TransformListener()
+        self.state_count = 0        
 
         rospy.spin()
 
