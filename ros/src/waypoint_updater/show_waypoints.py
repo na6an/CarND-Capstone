@@ -20,7 +20,7 @@ from std_msgs.msg import Int32, Bool
 from std_msgs.msg import Float32 as Float
 from geometry_msgs.msg import PoseStamped
 from dbw_mkz_msgs.msg import SteeringCmd, SteeringReport, ThrottleCmd, BrakeCmd
-from styx_msgs.msg import TrafficLightArray, Lane
+from styx_msgs.msg import TrafficLightArray, Lane, Light
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
@@ -92,7 +92,7 @@ class Visualization(QtWidgets.QWidget):
         rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb, queue_size=1)
 
         self.traffic_light = - 1
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_waypoint_cb, queue_size=1)
+        rospy.Subscriber('/traffic_light', Light, self.traffic_waypoint_cb, queue_size=1)
 
         self.current_pose = None
         rospy.Subscriber('/current_pose', PoseStamped, self.current_pose_cb, queue_size=1)
@@ -518,7 +518,7 @@ class Visualization(QtWidgets.QWidget):
         :param msg:
         :return:
         """
-        self.traffic_light = msg.data
+        self.traffic_light = msg.state
 
     def current_pose_cb(self, msg):
         """

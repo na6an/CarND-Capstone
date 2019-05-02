@@ -10,12 +10,13 @@ import tensorflow as tf
 
 import rospy
 
-DETECTION_THRESHOLD = 0.5
+DETECTION_THRESHOLD = 0.8
 
 class TLClassifier(object):
     def __init__(self, model_path):
         # Import tensorflow graph
         self.detection_graph = tf.Graph()
+
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
 
@@ -28,8 +29,7 @@ class TLClassifier(object):
             self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
             self.d_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
             self.d_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
-            self.d_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
-            self.num_d = self.detection_graph.get_tensor_by_name('num_detections:0')
+            self.d_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')            
 
         self.sess = tf.Session(graph=self.detection_graph)
         
@@ -50,25 +50,24 @@ class TLClassifier(object):
             # BGR to RGB conversion
             image = image[:, :, ::-1]
 
-            img = Image.fromarray(image.astype('uint8'), 'RGB')            
-            img.thumbnail((400, 300), Image.ANTIALIAS)
-            
             # Expand dimension since the model expects image to have shape [1, None, None, 3].
-            img_expanded = np.expand_dims(img, axis=0)  
+            img_expanded = np.expand_dims(image, axis=0)  
+            
             # run classifier
             (scores, classes) = self.sess.run(
                 [self.d_scores, self.d_classes],
                 feed_dict={self.image_tensor: img_expanded})
             
             # find the top score for a given image frame
-            top_score = np.amax(np.squeeze(scores))
+            idx = np.argmax(np.squeeze(scores))
+            top_score = np.squeeze(scores)[idx]
             
             elapsed_time = time.time() - tic
-            rospy.logdebug("Time spent on classification=%.2f sec" % (elapsed_time))
+            rospy.loginfo("Time spent on classification=%.2f sec" % (elapsed_time))
 
             # figure out traffic light class based on the top score
             if top_score > DETECTION_THRESHOLD:
-                tl_state = int(np.squeeze(classes)[0])
+                tl_state = int(np.squeeze(classes)[idx])
                 
                 if tl_state == 1:                    
                     return TrafficLight.RED
@@ -76,6 +75,5 @@ class TLClassifier(object):
                     return TrafficLight.YELLOW
                 else:
                     return TrafficLight.GREEN
-            else:
-                rospy.logdebug("Traffic state: OFF")
+            else:                
                 return TrafficLight.UNKNOWN

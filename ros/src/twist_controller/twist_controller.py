@@ -34,7 +34,7 @@ class Controller(object):
         self.accel_limit = accel_limit
         self.wheel_radius = wheel_radius
 
-        self.last_time = rospy.get_time()        
+        self.last_time = rospy.get_time()   
 
     def control(self, target_velocity, current_velocity):
         current_vel = self.vel_lpf.filt(current_velocity.linear.x)
@@ -65,3 +65,6 @@ class Controller(object):
             brake = 0.0
 
         return throttle, brake, steering
+
+    def reset(self):
+        self.throttle_controller.reset()        
