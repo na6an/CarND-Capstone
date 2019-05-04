@@ -66,7 +66,7 @@
     ```
     cd $HOME/CarND-Capstone/detection
 
-    python ~/tensorflow/models/object_detection/export_inference_graph.py --input_type image_tensor --pipeline_config_path ssd_inception_v2_coco.config --trained_checkpoint_prefix model.ckpt-2000000 --output_directory ../inference
+    python ~/tensorflow/models/object_detection/export_inference_graph.py --input_type image_tensor --pipeline_config_path config/ssd_inception_v2_coco.config --trained_checkpoint_prefix model.ckpt-2000000 --output_directory inference
     ```
 * Copy frozen graph
     ```
