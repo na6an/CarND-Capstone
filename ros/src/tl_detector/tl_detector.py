@@ -20,6 +20,10 @@ from scipy.spatial import KDTree
 STATE_COUNT_THRESHOLD = 3
 LOOKAHEAD_WPS = 150
 
+TRAFFIC_LIGHT_STATES = [
+    "RED", "YELLOW", "GREEN", "UNKNOWN", "UNKNOWN"
+]
+
 class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
@@ -131,21 +135,24 @@ class TLDetector(object):
         if not (self.waypoints_2d and self.waypoint_tree and self.current_position):
             return -1, TrafficLight.UNKNOWN
 
-        self.current_car_index = self.get_nearest_waypoint_index(
-            self.current_position.pose.position.x, self.current_position.pose.position.y)		
-
+        # Initialize indices
         if len(self.all_traffic_light_indices) == 0 and self.base_waypoints:
             self.update_traffic_light_indices()
             self.update_stop_line_indices()
 
-        tl_index, stop_line_index = self.get_nearest_traffic_light()
+        # Find current car index
+        self.current_car_index = self.get_nearest_waypoint_index(
+            self.current_position.pose.position.x, self.current_position.pose.position.y)
+        
+        # Find nearest traffic light info
+        tl_index, stop_line_index = self.get_nearest_traffic_light()        
         if not tl_index or (tl_index - self.current_car_index) > LOOKAHEAD_WPS:
             rospy.loginfo('No traffic light in sight')
 
             return -1, TrafficLight.UNKNOWN
 
         state = self.get_light_state()
-        rospy.loginfo('Traffic light in state : {}'.format(state))
+        rospy.loginfo('Traffic light in state : {}'.format(TRAFFIC_LIGHT_STATES[state]))
         
         return stop_line_index, state
 
