@@ -66,7 +66,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
         self.stop_line_positions = self.config['stop_line_positions']
 
-        self.upcoming_red_light_pub = rospy.Publisher('/traffic_light', Light, queue_size=1)
+        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Light, queue_size=1)
 
         rospy.spin()
 

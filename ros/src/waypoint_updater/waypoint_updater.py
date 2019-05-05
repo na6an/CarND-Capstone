@@ -42,7 +42,7 @@ class WaypointUpdater(object):
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        rospy.Subscriber('/traffic_light', Light, self.traffic_cb)
+        rospy.Subscriber('/traffic_waypoint', Light, self.traffic_light_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
@@ -147,7 +147,7 @@ class WaypointUpdater(object):
         self.waypoints_2d = [[wp.pose.pose.position.x, wp.pose.pose.position.y] for wp in waypoints.waypoints]
         self.waypoint_tree = KDTree(self.waypoints_2d)
 
-    def traffic_cb(self, msg):        
+    def traffic_light_cb(self, msg):        
         # Populate the next traffic light's stop line index
         self.stopline_wp_idx = msg.index
         
