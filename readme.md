@@ -1,6 +1,33 @@
 # System Integration
 ### Programming a Real Self-Driving Car
 
+## Team & Responsibility
+### Hafizur Rahman
+Mail: bibagimon[at]gmail.com
+TZ: UTC+9(Tokyo)
+Lead, Traffic light detector DL model
+
+### Ryo Takaki
+Mail: takaki.ryou[at]gmail.com
+TZ: UTC-5 (Michigan)
+Implement DBW node
+
+### Henry Gridley
+Mail: henry.gridley[at]gmail.com
+TZ: UTC-7 (San Francisco)
+Implement traffic light detector
+
+### Freedom Challis
+Mail: freedomtrain7[at]gmail.com
+TZ: UTC-6 (Illinois)
+Implement traffic light detector
+
+### Nathan Byun
+Mail: jbyun6[at]gmail.com
+TZ: UTC-5 (Virginia -> Ohio)
+Implement waypoint updater
+
+
 ## Setup 
 Original repo can be found here:  
 https://github.com/udacity/CarND-Capstone  
@@ -39,10 +66,7 @@ catkin_make
 source devel/setup.sh
 roslaunch launch/styx.launch
 ```
-4. Run the simulator
-
-
-
+4. Run the simulator  
 `cd ~(path-to)/CarND-Capstone/ros`  
 Then,  
 ```
@@ -51,7 +75,7 @@ catkin_make
 source devel/setup.sh  
 roslaunch launch/styx.launch  
 ```
-## Troubleshoot
+## Troubleshoot  
 
 ```
 CMake Error at /opt/ros/kinetic/share/pcl_ros/cmake/pcl_rosConfig.cmake:113 (message):  
