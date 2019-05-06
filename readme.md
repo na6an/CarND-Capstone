@@ -47,6 +47,10 @@ https://github.com/udacity/CarND-Capstone
   * Use this option to install the SDK on a workstation that already has ROS installed: [One Line SDK Install (binary)](https://bitbucket.org/DataspeedInc/dbw_mkz_ros/src/81e63fcc335d7b64139d7482017d6a97b405e250/ROS_SETUP.md?fileviewer=file-view-default)
 * Download the [Udacity Simulator](https://github.com/udacity/CarND-Capstone/releases).
 
+An alternative frozen train model is also available from here:  
+https://drive.google.com/open?id=1UiCU6oJ7Lbld8lEQq52j9r3J0dtCIXN9  
+Place this file in `src/tl_detector/light_classification/models` directory and rename to "ssd_sim.pb" to use this.  
+
 ## Run
 
 1. Clone the project repository
