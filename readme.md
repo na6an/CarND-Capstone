@@ -105,8 +105,8 @@ Call Stack (most recent call first):
 ==
 
 AttributeError: 'module' object has no attribute 'poll'
-Then,
-
+Then, disable monkey patch from line #4 in /ros/src/styx/server.py.
+`# eventlet.monkey_patch(socket=True, select=True, time=True)`
 
 
 
