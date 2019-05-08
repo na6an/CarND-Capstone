@@ -81,30 +81,6 @@ roslaunch launch/styx.launch
 ```
 ## Troubleshoot  
 
-
-`bash <(wget -q -O - https://bitbucket.org/DataspeedInc/dbw_mkz_ros/raw/default/dbw_mkz/scripts/ros_install.bash)`
-
-===
-```
-python -m pip install --upgrade pip
-python -m pip --user install jupyter
-pip install matplotlib
-pip install opencv-python
-pip install sklearn
-pip install tensorflow-gpu
-
-sudo pip install matplotlib
-sudo pip install opencv-python
-sudo pip install sklearn
-sudo pip install tensorflow-gpu
-
-sudo pip install eventlet
-sudo pip install python-socketio
-sudo pip install flask
-sudo pip install attrdict
-```
-===
-
 ```
 CMake Error at /opt/ros/kinetic/share/pcl_ros/cmake/pcl_rosConfig.cmake:113 (message):  
   Project 'pcl_ros' specifies '/usr/include/pcl-1.7' as an include dir, which  
