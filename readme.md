@@ -102,6 +102,13 @@ Call Stack (most recent call first):
 
 `find ~/(path-to)/CarND-Capstone/ros -type f -iname "*.py" -exec chmod +x {} \;`
 
+==
+
+AttributeError: 'module' object has no attribute 'poll'
+Then,
+
+
+
 
 ## Code Structure
 
